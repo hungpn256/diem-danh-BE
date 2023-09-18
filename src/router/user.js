@@ -2,6 +2,8 @@ import express from "express";
 import { UserModel } from "../model/user.js";
 import { keys } from "../config/key.js";
 import { requireSignin } from "../helper/login.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 const { secret, tokenLife } = keys.jwt;
 const userRouter = express.Router();
