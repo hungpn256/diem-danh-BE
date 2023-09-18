@@ -11,10 +11,6 @@ const userRouter = express.Router();
 userRouter.post("/register", async (req, res) => {
   try {
     const { email, phoneNumber, password, name, role } = req.body;
-    console.log(
-      "🚀 ~ file: user.js:11 ~ userRouter.post ~ { email, phoneNumber, password, name, role }:",
-      { email, phoneNumber, password, name, role }
-    );
     const existedUser = await UserModel.findOne({ email: email });
     console.log("existedUser", existedUser);
     if (existedUser) {
@@ -28,14 +24,46 @@ userRouter.post("/register", async (req, res) => {
       name,
       role,
     });
+
+    if (role === "user") {
+      user.managedBy = req.user._id;
+    }
+
     await user.save();
-    console.log("======");
     return res.status(201).json({
       success: true,
     });
   } catch (e) {
     console.log(e);
     return res.status(400).json({ error: "Người dùng đã tồn tại" });
+  }
+});
+
+userRouter.post("/add-user", requireSignin, async (req, res) => {
+  try {
+    const { email, phoneNumber, password, name, role } = req.body;
+    const existedUser = await UserModel.findOne({ email: email });
+    console.log("existedUser", existedUser);
+    if (existedUser) {
+      return res.status(400).json({ error: "Người dùng đã tồn tại" });
+    }
+
+    const user = new UserModel({
+      email,
+      password,
+      phoneNumber,
+      name,
+      role,
+      managedBy: req.user._id,
+    });
+
+    await user.save();
+    return res.status(201).json({
+      success: true,
+    });
+  } catch (e) {
+    console.log(e);
+    return res.status(400).json({ error: "Đã xảy ra lỗi" });
   }
 });
 
