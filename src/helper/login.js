@@ -1,8 +1,8 @@
-const jwt = require("jsonwebtoken");
+import jwt from "jsonwebtoken";
 
 export const requireSignin = (req, res, next) => {
-  if (req.headers.authorization) {
-    const token = req.headers.authorization.split(" ")[1];
+  if (req.headers.Authorization) {
+    const token = req.headers.Authorization.split(" ")[1];
     const user = jwt.verify(token, keys.jwt.secret);
     req.user = user;
   } else {
