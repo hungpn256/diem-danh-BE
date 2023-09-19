@@ -19,6 +19,9 @@
     "mongoose": "^7.5.2",
     "nodemailer": "^6.9.5"
   },
+  "engines": {
+    "node": ">=15"
+  },
   "devDependencies": {
     "nodemon": "^3.0.1"
   }
