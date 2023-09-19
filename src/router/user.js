@@ -127,20 +127,21 @@ userRouter.get("/profile", requireSignin, async (req, res) => {
 });
 
 userRouter.post("/create-password", requireSignin, async (req, res) => {
-  const { email, role } = req.body;
-  if (role === "admin") {
-    const user = await UserModel.findOne({ email });
-    const newPass = `000000${Math.round(Math.random() * 999999)}`.slice(-6);
-    if (user) {
-      user.password = newPass;
-      await user.save();
-      return res.status(200).json({
-        email,
-        password: newPass,
-      });
-    }
+  const { email } = req.body;
+  const user = await UserModel.findOne({ email });
+  const newPass = `000000${Math.round(Math.random() * 999999)}`.slice(-6);
+  if (user) {
+    user.password = newPass;
+    await user.save();
+    return res.status(200).json({
+      email,
+      password: newPass,
+      _id: user._id,
+    });
   }
-  return res.status(400);
+  return res.status(400).json({
+    message: "Người dùng không tồn tại",
+  });
 });
 
 userRouter.get("/get-user-managed", requireSignin, async (req, res) => {
@@ -148,6 +149,24 @@ userRouter.get("/get-user-managed", requireSignin, async (req, res) => {
   try {
     const users = await UserModel.find({ managedBy: user._id });
     res.status(200).json({ users });
+  } catch {
+    return res.status(401).json({
+      success: false,
+      message: "Người dùng không tồn tại",
+    });
+  }
+});
+
+userRouter.put("/:id", requireSignin, async (req, res) => {
+  const user = req.user;
+  const idUserEdit = req.params.id;
+  const body = req.body;
+  try {
+    const userEdit = await UserModel.findOne({ _id: idUserEdit });
+    userEdit.name = body.name;
+    userEdit.phoneNumber = body.phoneNumber;
+    await userEdit.save();
+    res.status(200).json({ user: userEdit });
   } catch {
     return res.status(401).json({
       success: false,
