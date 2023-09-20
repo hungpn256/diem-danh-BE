@@ -82,7 +82,7 @@ userRouter.post("/login", async (req, res) => {
         secret,
         { expiresIn: tokenLife },
         async (err, token) => {
-          if (role === "user") {
+          if (user.role === "user") {
             if (deviceUniqueId && deviceName) {
               const device = new DeviceModel({
                 deviceUniqueId,
