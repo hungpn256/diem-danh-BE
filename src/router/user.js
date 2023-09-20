@@ -106,6 +106,7 @@ userRouter.post("/login", async (req, res) => {
               email: user.email,
               phoneNumber: user.phoneNumber,
               name: user.name,
+              currentSalary: user.currentSalary,
             },
           });
         }
@@ -136,6 +137,7 @@ userRouter.get("/profile", requireSignin, async (req, res) => {
           email: _user.email,
           phoneNumber: _user.phoneNumber,
           name: _user.name,
+          currentSalary: _user.currentSalary,
         },
       });
     }
@@ -186,6 +188,7 @@ userRouter.put("/:id", requireSignin, async (req, res) => {
     const userEdit = await UserModel.findOne({ _id: idUserEdit });
     userEdit.name = body.name;
     userEdit.phoneNumber = body.phoneNumber;
+    userEdit.currentSalary = body.currentSalary;
     await userEdit.save();
     res.status(200).json({ user: userEdit });
   } catch {
