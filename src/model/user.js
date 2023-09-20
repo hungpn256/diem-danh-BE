@@ -23,9 +23,6 @@ const userSchema = new mongoose.Schema({
   currentSalary: {
     type: Number,
   },
-  currentSalary: {
-    type: Number,
-  },
   numOfDaysOff: {
     type: Number,
     default: 0,
@@ -37,6 +34,9 @@ const userSchema = new mongoose.Schema({
   device: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Device",
+  },
+  tokenCheckIn: {
+    type: String,
   },
 });
 
