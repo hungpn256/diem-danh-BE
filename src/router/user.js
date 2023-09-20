@@ -4,6 +4,7 @@ import { keys } from "../config/key.js";
 import { requireSignin } from "../helper/login.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { DeviceModel } from "../model/device.js";
 
 const { secret, tokenLife } = keys.jwt;
 const userRouter = express.Router();
@@ -47,7 +48,6 @@ userRouter.post("/add-user", requireSignin, async (req, res) => {
     if (existedUser) {
       return res.status(400).json({ error: "Người dùng đã tồn tại" });
     }
-
     const user = new UserModel({
       email,
       password,
@@ -68,7 +68,7 @@ userRouter.post("/add-user", requireSignin, async (req, res) => {
 });
 
 userRouter.post("/login", async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, deviceUniqueId, deviceName } = req.body;
   const user = await UserModel.findOne({ email });
   bcrypt.compare(password, user.password).then((isMatch) => {
     if (isMatch) {
@@ -77,22 +77,43 @@ userRouter.post("/login", async (req, res) => {
         role: user.role,
       };
 
-      jwt.sign(payload, secret, { expiresIn: tokenLife }, (err, token) => {
-        res.status(200).json({
-          success: true,
-          token: `Bearer ${token}`,
-          user: {
-            _id: user._id,
-            email: user.email,
-            phoneNumber: user.phoneNumber,
-            name: user.name,
-          },
-        });
-      });
+      jwt.sign(
+        payload,
+        secret,
+        { expiresIn: tokenLife },
+        async (err, token) => {
+          if (role === "user") {
+            if (deviceUniqueId && deviceName) {
+              const device = new DeviceModel({
+                deviceUniqueId,
+                name: deviceName,
+              });
+              await device.save();
+              user.device = device._id;
+              await user.save();
+            } else {
+              return res.status(401).json({
+                success: false,
+                error: "Không thể cập nhật thông tin thiết bị",
+              });
+            }
+          }
+          return res.status(200).json({
+            success: true,
+            token: `Bearer ${token}`,
+            user: {
+              _id: user._id,
+              email: user.email,
+              phoneNumber: user.phoneNumber,
+              name: user.name,
+            },
+          });
+        }
+      );
     } else {
-      res.status(401).json({
+      return res.status(401).json({
         success: false,
-        error: "Sai mật khẩu",
+        error: "Không tìm thấy người dùng",
       });
     }
   });
@@ -105,7 +126,7 @@ userRouter.get("/profile", requireSignin, async (req, res) => {
     if (!_user)
       return res.status(401).json({
         success: false,
-        message: "User doesn't exist.",
+        message: "Không tìm thấy người dùng",
       });
     else {
       return res.status(200).json({

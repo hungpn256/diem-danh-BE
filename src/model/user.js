@@ -20,9 +20,23 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  currentSalary: {
+    type: Number,
+  },
+  currentSalary: {
+    type: Number,
+  },
+  numOfDaysOff: {
+    type: Number,
+    default: 0,
+  },
   managedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
+  },
+  device: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Device",
   },
 });
 
