@@ -68,56 +68,63 @@ userRouter.post("/add-user", requireSignin, async (req, res) => {
 });
 
 userRouter.post("/login", async (req, res) => {
-  const { email, password, deviceUniqueId, deviceName } = req.body;
-  const user = await UserModel.findOne({ email });
-  bcrypt.compare(password, user.password).then((isMatch) => {
-    if (isMatch) {
-      const payload = {
-        _id: user._id,
-        role: user.role,
-      };
+  try {
+    const { email, password, deviceUniqueId, deviceName } = req.body;
+    const user = await UserModel.findOne({ email });
+    bcrypt.compare(password, user.password).then((isMatch) => {
+      if (isMatch) {
+        const payload = {
+          _id: user._id,
+          role: user.role,
+        };
 
-      jwt.sign(
-        payload,
-        secret,
-        { expiresIn: tokenLife },
-        async (err, token) => {
-          if (user.role === "user") {
-            if (deviceUniqueId && deviceName) {
-              const device = new DeviceModel({
-                deviceUniqueId,
-                name: deviceName,
-              });
-              await device.save();
-              user.device = device._id;
-              await user.save();
-            } else {
-              return res.status(401).json({
-                success: false,
-                error: "Không thể cập nhật thông tin thiết bị",
-              });
+        jwt.sign(
+          payload,
+          secret,
+          { expiresIn: tokenLife },
+          async (err, token) => {
+            if (user.role === "user") {
+              if (deviceUniqueId && deviceName) {
+                const device = new DeviceModel({
+                  deviceUniqueId,
+                  name: deviceName,
+                });
+                await device.save();
+                user.device = device._id;
+                await user.save();
+              } else {
+                return res.status(401).json({
+                  success: false,
+                  error: "Không thể cập nhật thông tin thiết bị",
+                });
+              }
             }
+            return res.status(200).json({
+              success: true,
+              token: `Bearer ${token}`,
+              user: {
+                _id: user._id,
+                email: user.email,
+                phoneNumber: user.phoneNumber,
+                name: user.name,
+                currentSalary: user.currentSalary,
+              },
+            });
           }
-          return res.status(200).json({
-            success: true,
-            token: `Bearer ${token}`,
-            user: {
-              _id: user._id,
-              email: user.email,
-              phoneNumber: user.phoneNumber,
-              name: user.name,
-              currentSalary: user.currentSalary,
-            },
-          });
-        }
-      );
-    } else {
-      return res.status(401).json({
-        success: false,
-        error: "Không tìm thấy người dùng",
-      });
-    }
-  });
+        );
+      } else {
+        return res.status(401).json({
+          success: false,
+          error: "Không tìm thấy người dùng",
+        });
+      }
+    });
+  } catch (err) {
+    return res.status(401).json({
+      success: false,
+      error: "Không tìm thấy người dùng",
+    });
+  }
 });
 
 userRouter.get("/profile", requireSignin, async (req, res) => {
