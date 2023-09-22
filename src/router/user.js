@@ -25,11 +25,6 @@ userRouter.post("/register", async (req, res) => {
       name,
       role,
     });
-
-    if (role === "user") {
-      user.managedBy = req.user._id;
-    }
-
     await user.save();
     return res.status(201).json({
       success: true,
@@ -58,7 +53,6 @@ userRouter.post("/add-user", requireSignin, async (req, res) => {
       managedBy: req.user._id,
       currentSalary,
     });
-
     await user.save();
     return res.status(201).json({
       success: true,
