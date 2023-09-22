@@ -167,9 +167,16 @@ userRouter.post("/create-password", requireSignin, async (req, res) => {
 });
 
 userRouter.get("/get-user-managed", requireSignin, async (req, res) => {
-  const user = req.user;
   try {
-    const users = await UserModel.find({ managedBy: user._id });
+    const txtSearch = req.query.txtSearch;
+    const user = req.user;
+    const users = await UserModel.find({
+      managedBy: user._id,
+      $or: [
+        { email: { $regex: txtSearch || "", $options: "i" } },
+        { name: { $regex: txtSearch || "", $options: "i" } },
+      ],
+    });
     res.status(200).json({ users });
   } catch {
     return res.status(401).json({
