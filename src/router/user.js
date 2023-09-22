@@ -42,7 +42,8 @@ userRouter.post("/register", async (req, res) => {
 
 userRouter.post("/add-user", requireSignin, async (req, res) => {
   try {
-    const { email, phoneNumber, password, name, role } = req.body;
+    const { email, phoneNumber, password, name, role, currentSalary } =
+      req.body;
     const existedUser = await UserModel.findOne({ email: email });
     console.log("existedUser", existedUser);
     if (existedUser) {
@@ -55,6 +56,7 @@ userRouter.post("/add-user", requireSignin, async (req, res) => {
       name,
       role,
       managedBy: req.user._id,
+      currentSalary,
     });
 
     await user.save();
@@ -99,16 +101,11 @@ userRouter.post("/login", async (req, res) => {
                 });
               }
             }
+            delete user.password;
             return res.status(200).json({
               success: true,
               token: `Bearer ${token}`,
-              user: {
-                _id: user._id,
-                email: user.email,
-                phoneNumber: user.phoneNumber,
-                name: user.name,
-                currentSalary: user.currentSalary,
-              },
+              user,
             });
           }
         );
@@ -131,21 +128,16 @@ userRouter.get("/profile", requireSignin, async (req, res) => {
   const user = req.user;
   try {
     const _user = await UserModel.findOne({ _id: user._id });
-    if (!_user)
+    if (!_user) {
       return res.status(401).json({
         success: false,
         message: "Không tìm thấy người dùng",
       });
-    else {
+    } else {
+      delete _user.password;
       return res.status(200).json({
         success: true,
-        user: {
-          _id: _user._id,
-          email: _user.email,
-          phoneNumber: _user.phoneNumber,
-          name: _user.name,
-          currentSalary: _user.currentSalary,
-        },
+        user: _user,
       });
     }
   } catch {
@@ -196,6 +188,7 @@ userRouter.put("/:id", requireSignin, async (req, res) => {
     userEdit.name = body.name;
     userEdit.phoneNumber = body.phoneNumber;
     userEdit.currentSalary = body.currentSalary;
+    delete userEdit.password;
     await userEdit.save();
     res.status(200).json({ user: userEdit });
   } catch {

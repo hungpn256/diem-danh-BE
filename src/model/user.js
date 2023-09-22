@@ -41,7 +41,8 @@ const userSchema = new mongoose.Schema({
 });
 
 userSchema.pre("save", function (next) {
-  bcrypt.genSalt(10, (err, salt) => {
+  if (this.password.length === 20) next();
+  bcrypt.genSalt(20, (err, salt) => {
     bcrypt.hash(this.password, salt, (err, hash) => {
       this.password = hash;
       next();
