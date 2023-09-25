@@ -5,13 +5,14 @@ const leaveRequestSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     required: true,
   },
-  startDate: {
+  date: {
     type: Date,
     required: true,
   },
-  endDate: {
-    type: Date,
+  time: {
+    type: String,
     required: true,
+    enum: ["01", "10", "11"],
   },
   reason: {
     type: String,

@@ -40,20 +40,6 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-userSchema.pre("save", function (next) {
-  if (!this.password) return next();
-  if (this.password?.length === 10) return next();
-  bcrypt.genSalt(10, (err, salt) => {
-    bcrypt.hash(this.password, salt, (err, hash) => {
-      if (err) {
-        throw Error("Lỗi");
-      }
-      this.password = hash;
-      next();
-    });
-  });
-});
-
 const UserModel = mongoose.model("User", userSchema);
 
 export { UserModel };

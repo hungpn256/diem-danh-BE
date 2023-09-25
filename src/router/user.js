@@ -17,10 +17,12 @@ userRouter.post("/register", async (req, res) => {
     if (existedUser) {
       return res.status(400).json({ error: "Người dùng đã tồn tại" });
     }
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash(password, salt);
 
     const user = new UserModel({
       email,
-      password,
+      password: hash,
       phoneNumber,
       name,
       role,
@@ -189,8 +191,8 @@ userRouter.put("/:id", requireSignin, async (req, res) => {
     userEdit.name = body.name;
     userEdit.phoneNumber = body.phoneNumber;
     userEdit.currentSalary = body.currentSalary;
-    delete userEdit.password;
     await userEdit.save();
+    delete userEdit.password;
     res.status(200).json({ user: userEdit });
   } catch {
     return res.status(401).json({
