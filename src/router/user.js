@@ -49,7 +49,7 @@ userRouter.post("/add-user", requireSignin, async (req, res) => {
 
     const user = new UserModel({
       email,
-      password: hash,
+      password,
       phoneNumber,
       name,
       role,
