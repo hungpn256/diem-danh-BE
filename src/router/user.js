@@ -46,9 +46,13 @@ userRouter.post("/add-user", requireSignin, async (req, res) => {
     if (existedUser) {
       return res.status(400).json({ error: "Người dùng đã tồn tại" });
     }
+
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash(password, salt);
+
     const user = new UserModel({
       email,
-      password,
+      password:hash,
       phoneNumber,
       name,
       role,
