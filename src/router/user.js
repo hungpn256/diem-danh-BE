@@ -47,12 +47,9 @@ userRouter.post("/add-user", requireSignin, async (req, res) => {
       return res.status(400).json({ error: "Người dùng đã tồn tại" });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hash = await bcrypt.hash(password, salt);
-
     const user = new UserModel({
       email,
-      password:hash,
+      password: hash,
       phoneNumber,
       name,
       role,
@@ -153,7 +150,9 @@ userRouter.post("/create-password", requireSignin, async (req, res) => {
   const user = await UserModel.findOne({ email });
   const newPass = `000000${Math.round(Math.random() * 999999)}`.slice(-6);
   if (user) {
-    user.password = newPass;
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash(newPass, salt);
+    user.password = hash;
     await user.save();
     return res.status(200).json({
       email,
