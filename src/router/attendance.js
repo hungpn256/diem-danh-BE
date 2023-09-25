@@ -27,6 +27,10 @@ attendanceRouter.post("/attendance", requireSignin, async (req, res) => {
   try {
     const userId = req.user?._id;
     const { userManagerId, token } = req.body;
+    console.log(
+      "🚀 ~ file: attendance.js:30 ~ attendanceRouter.post ~ { userManagerId, token }:",
+      { userManagerId, token }
+    );
     const userManager = await UserModel.findOne({
       _id: userManagerId,
       tokenCheckIn: token,
@@ -65,6 +69,10 @@ attendanceRouter.post("/additional-work", requireSignin, async (req, res) => {
   try {
     const user = req.user;
     const body = req.body;
+    console.log(
+      "🚀 ~ file: attendance.js:68 ~ attendanceRouter.post ~ body:",
+      body
+    );
     const leaveRequest = new LeaveRequestModel({
       ...body,
       status: "PENDING",
