@@ -11,7 +11,15 @@ const attendanceRouter = express.Router();
 attendanceRouter.post("/create-token", requireSignin, async (req, res) => {
   try {
     const userId = req.user?._id;
+    console.log(
+      "🚀 ~ file: attendance.js:14 ~ attendanceRouter.post ~ userId:",
+      userId
+    );
     const user = await UserModel.findById(userId);
+    console.log(
+      "🚀 ~ file: attendance.js:19 ~ attendanceRouter.post ~ user:",
+      user
+    );
     const token = `000000${Math.round(Math.random() * 999999)}`.slice(-6);
     user.tokenCheckIn = token;
     await user.save();
@@ -51,7 +59,7 @@ attendanceRouter.post("/attendance", requireSignin, async (req, res) => {
         userId,
         date: moment().startOf("date"),
         checkInTime: moment(),
-        latePenalty: moment()
+        latePenalty: -moment()
           .startOf("day")
           .set("minute", ruleAttendance.morning.startHour * 60)
           .startOf("minute")

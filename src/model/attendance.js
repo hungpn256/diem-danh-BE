@@ -15,7 +15,6 @@ const attendanceSchema = new mongoose.Schema({
   },
   checkOutTime: {
     type: Date,
-    required: true,
   },
   latePenalty: {
     type: Number,
