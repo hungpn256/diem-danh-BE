@@ -41,6 +41,7 @@ attendanceRouter.post("/attendance", requireSignin, async (req, res) => {
     if (attendanceExist) {
       attendanceExist.checkOutTime = moment().toDate();
       await attendanceExist.save();
+      return res.status(200).json({ attendance: attendanceExist });
     } else {
       const attendance = new AttendanceModel({
         userId,
