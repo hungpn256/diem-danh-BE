@@ -162,6 +162,8 @@ attendanceRouter.get("/", requireSignin, async (req, res) => {
         $gte: new Date(from),
         $lte: new Date(to),
       },
+    }).sort({
+      date: "ascending",
     });
     return res.status(200).json({ attendances });
   } catch (error) {
