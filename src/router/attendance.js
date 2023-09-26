@@ -40,10 +40,10 @@ attendanceRouter.post("/attendance", requireSignin, async (req, res) => {
     }
     const attendanceExist = await AttendanceModel.findOne({
       userId: userId,
-      date: { $gte: moment().startOf("date") },
+      date: { $gte: moment().startOf("day") },
     });
     if (attendanceExist) {
-      attendanceExist.checkOutTime = moment().set("hour", 15).toDate();
+      attendanceExist.checkOutTime = moment().toDate();
       if (
         moment(attendanceExist.checkOutTime).isAfter(
           getTimeByHour(
