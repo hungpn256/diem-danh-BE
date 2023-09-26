@@ -26,6 +26,10 @@ const leaveRequestSchema = new mongoose.Schema({
     type: String,
     enum: ["ADDITIONAL", "LEAVE"],
   },
+  createdAt: {
+    type: Date,
+    default: Date.now(),
+  },
 });
 
 const LeaveRequestModel = mongoose.model("LeaveRequest", leaveRequestSchema);

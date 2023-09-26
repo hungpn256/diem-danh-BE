@@ -156,6 +156,24 @@ attendanceRouter.post("/additional-work", requireSignin, async (req, res) => {
   }
 });
 
+attendanceRouter.get("/additional-work", requireSignin, async (req, res) => {
+  try {
+    const { where, sort } = req.query;
+    console.log(
+      "🚀 ~ file: attendance.js:162 ~ attendanceRouter.get ~ where:",
+      where
+    );
+    const leaveRequests = await LeaveRequestModel.find(where).sort(sort);
+    res.status(200).json({ leaveRequests });
+  } catch (error) {
+    console.log(
+      "🚀 ~ file: attendance.js:148 ~ attendanceRouter.post ~ error:",
+      error
+    );
+    return res.status(401).json({ message: "Lỗi tạo phiếu" });
+  }
+});
+
 attendanceRouter.get("/", requireSignin, async (req, res) => {
   try {
     const user = req.user;
