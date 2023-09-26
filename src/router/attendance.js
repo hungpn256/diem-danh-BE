@@ -5,7 +5,6 @@ import { LeaveRequestModel } from "../model/leaveRequest.js";
 import { AttendanceModel } from "../model/attendance.js";
 import moment from "moment";
 import { getTimeByHour, ruleAttendance } from "../helper/ruleAttendance.js";
-import { formatIsCsv } from "appcenter-cli/dist/util/interaction/io-options.js";
 
 const attendanceRouter = express.Router();
 
