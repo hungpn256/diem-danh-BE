@@ -26,13 +26,17 @@ attendanceRouter.post("/create-token", requireSignin, async (req, res) => {
 attendanceRouter.post("/attendance", requireSignin, async (req, res) => {
   try {
     const userId = req.user?._id;
-    const { userManagerId, token } = req.body;
+    const device = req.user?.device;
+    const { userManagerId, token, deviceUniqueId } = req.body;
     const userManager = await UserModel.findOne({
       _id: userManagerId,
       tokenCheckIn: token,
     });
     if (!userManager) {
       return res.status(401).json({ message: "Token hết hạn" });
+    }
+    if (device?.deviceUniqueId !== deviceUniqueId) {
+      return res.status(401).json({ message: "Không đúng device" });
     }
     const attendanceExist = await AttendanceModel.findOne({
       userId: userId,
