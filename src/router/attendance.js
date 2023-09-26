@@ -4,22 +4,15 @@ import { UserModel } from "../model/user.js";
 import { LeaveRequestModel } from "../model/leaveRequest.js";
 import { AttendanceModel } from "../model/attendance.js";
 import moment from "moment";
-import { ruleAttendance } from "../helper/ruleAttendance.js";
+import { getTimeByHour, ruleAttendance } from "../helper/ruleAttendance.js";
+import { formatIsCsv } from "appcenter-cli/dist/util/interaction/io-options.js";
 
 const attendanceRouter = express.Router();
 
 attendanceRouter.post("/create-token", requireSignin, async (req, res) => {
   try {
     const userId = req.user?._id;
-    console.log(
-      "🚀 ~ file: attendance.js:14 ~ attendanceRouter.post ~ userId:",
-      userId
-    );
     const user = await UserModel.findById(userId);
-    console.log(
-      "🚀 ~ file: attendance.js:19 ~ attendanceRouter.post ~ user:",
-      user
-    );
     const token = `000000${Math.round(Math.random() * 999999)}`.slice(-6);
     user.tokenCheckIn = token;
     await user.save();
@@ -35,10 +28,6 @@ attendanceRouter.post("/attendance", requireSignin, async (req, res) => {
   try {
     const userId = req.user?._id;
     const { userManagerId, token } = req.body;
-    console.log(
-      "🚀 ~ file: attendance.js:30 ~ attendanceRouter.post ~ { userManagerId, token }:",
-      { userManagerId, token }
-    );
     const userManager = await UserModel.findOne({
       _id: userManagerId,
       tokenCheckIn: token,
@@ -51,7 +40,75 @@ attendanceRouter.post("/attendance", requireSignin, async (req, res) => {
       date: { $gte: moment().startOf("date") },
     });
     if (attendanceExist) {
-      attendanceExist.checkOutTime = moment().toDate();
+      attendanceExist.checkOutTime = moment().set("hour", 15).toDate();
+      if (
+        moment(attendanceExist.checkOutTime).isAfter(
+          getTimeByHour(
+            (ruleAttendance.morning.startHour +
+              ruleAttendance.morning.endHour) /
+              2
+          )
+        ) &&
+        moment(attendanceExist.checkInTime).isBefore(
+          getTimeByHour(
+            (ruleAttendance.morning.startHour +
+              ruleAttendance.morning.endHour) /
+              2
+          )
+        ) &&
+        moment(attendanceExist.checkOutTime).diff(
+          moment(attendanceExist.checkInTime),
+          "hour"
+        ) >
+          (ruleAttendance.morning.startHour - ruleAttendance.morning.endHour) /
+            2
+      ) {
+        attendanceExist.workSession = (
+          parseInt("10", 2) | parseInt(attendanceExist.workSession, 2)
+        ).toString(2);
+      }
+      console.log(
+        getTimeByHour(
+          (ruleAttendance.afternoon.startHour +
+            ruleAttendance.afternoon.endHour) /
+            2
+        ),
+        moment(attendanceExist.checkInTime),
+        moment(attendanceExist.checkInTime).isBefore(
+          getTimeByHour(
+            (ruleAttendance.afternoon.startHour +
+              ruleAttendance.afternoon.endHour) /
+              2
+          )
+        )
+      );
+      if (
+        moment(attendanceExist.checkOutTime).isAfter(
+          getTimeByHour(
+            (ruleAttendance.afternoon.startHour +
+              ruleAttendance.afternoon.endHour) /
+              2
+          )
+        ) &&
+        moment(attendanceExist.checkInTime).isBefore(
+          getTimeByHour(
+            (ruleAttendance.afternoon.startHour +
+              ruleAttendance.afternoon.endHour) /
+              2
+          )
+        ) &&
+        moment(attendanceExist.checkOutTime).diff(
+          moment(attendanceExist.checkInTime),
+          "hour"
+        ) >
+          (ruleAttendance.afternoon.startHour -
+            ruleAttendance.afternoon.endHour) /
+            2
+      ) {
+        attendanceExist.workSession = (
+          parseInt("01", 2) | parseInt(attendanceExist.workSession, 2)
+        ).toString(2);
+      }
       await attendanceExist.save();
       return res.status(200).json({ attendance: attendanceExist });
     } else {
@@ -59,17 +116,20 @@ attendanceRouter.post("/attendance", requireSignin, async (req, res) => {
         userId,
         date: moment().startOf("date"),
         checkInTime: moment(),
-        latePenalty: -moment()
-          .startOf("day")
-          .set("minute", ruleAttendance.morning.startHour * 60)
-          .startOf("minute")
-          .diff(moment(), "minute"),
+        latePenalty: -getTimeByHour(ruleAttendance.morning.startHour).diff(
+          moment(),
+          "minute"
+        ),
       });
       await attendance.save();
       return res.status(200).json({ attendance });
     }
   } catch (error) {
-    return res.status(401).json({ message: "Lỗi tạo token" });
+    console.log(
+      "🚀 ~ file: attendance.js:125 ~ attendanceRouter.post ~ error:",
+      error
+    );
+    return res.status(401).json({ message: "Đã xay ra lỗi" });
   }
 });
 
@@ -77,10 +137,6 @@ attendanceRouter.post("/additional-work", requireSignin, async (req, res) => {
   try {
     const user = req.user;
     const body = req.body;
-    console.log(
-      "🚀 ~ file: attendance.js:68 ~ attendanceRouter.post ~ body:",
-      body
-    );
     const leaveRequest = new LeaveRequestModel({
       ...body,
       status: "PENDING",
@@ -89,7 +145,32 @@ attendanceRouter.post("/additional-work", requireSignin, async (req, res) => {
     await leaveRequest.save();
     res.status(200).json({ leaveRequest });
   } catch (error) {
+    console.log(
+      "🚀 ~ file: attendance.js:148 ~ attendanceRouter.post ~ error:",
+      error
+    );
     return res.status(401).json({ message: "Lỗi tạo phiếu" });
+  }
+});
+
+attendanceRouter.get("/", requireSignin, async (req, res) => {
+  try {
+    const user = req.user;
+    const { from, to, userId } = req.query;
+    const attendances = await AttendanceModel.find({
+      userId: userId || user._id,
+      date: {
+        $gte: new Date(from),
+        $lte: new Date(to),
+      },
+    });
+    return res.status(200).json({ attendances });
+  } catch (error) {
+    console.log(
+      "🚀 ~ file: attendance.js:165 ~ attendanceRouter.get ~ error:",
+      error
+    );
+    return res.status(401).json({ message: "Có lỗi xảy ra" });
   }
 });
 
