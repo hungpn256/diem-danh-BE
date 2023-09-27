@@ -1,7 +1,7 @@
 import express from "express";
 import { UserModel } from "../model/user.js";
 import { keys } from "../config/key.js";
-import { requireSignin } from "../helper/login.js";
+import { requireAdminSignin, requireSignin } from "../helper/login.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { DeviceModel } from "../model/device.js";
@@ -11,11 +11,11 @@ const userRouter = express.Router();
 
 userRouter.post("/register", async (req, res) => {
   try {
-    const { email, phoneNumber, password, name, role } = req.body;
+    const { email, phoneNumber, password, name } = req.body;
     const existedUser = await UserModel.findOne({ email: email });
     console.log("existedUser", existedUser);
     if (existedUser) {
-      return res.status(400).json({ error: "Người dùng đã tồn tại" });
+      return res.status(400).json({ error: "Email người dùng đã tồn tại" });
     }
     const salt = await bcrypt.genSalt(10);
     const hash = await bcrypt.hash(password, salt);
@@ -25,7 +25,7 @@ userRouter.post("/register", async (req, res) => {
       password: hash,
       phoneNumber,
       name,
-      role,
+      role: "admin",
     });
     await user.save();
     return res.status(201).json({
@@ -37,7 +37,7 @@ userRouter.post("/register", async (req, res) => {
   }
 });
 
-userRouter.post("/add-user", requireSignin, async (req, res) => {
+userRouter.post("/add-user", requireAdminSignin, async (req, res) => {
   try {
     const { email, phoneNumber, password, name, role, currentSalary } =
       req.body;
@@ -53,7 +53,7 @@ userRouter.post("/add-user", requireSignin, async (req, res) => {
       phoneNumber,
       name,
       role,
-      managedBy: req.user._id,
+      managedBy: req.user?.managedBy?._id,
       currentSalary,
     });
     await user.save();
@@ -128,7 +128,7 @@ userRouter.get("/profile", requireSignin, async (req, res) => {
     if (!_user) {
       return res.status(401).json({
         success: false,
-        message: "Không tìm thấy người dùng",
+        error: "Không tìm thấy người dùng",
       });
     } else {
       delete _user.password;
@@ -140,12 +140,12 @@ userRouter.get("/profile", requireSignin, async (req, res) => {
   } catch {
     return res.status(401).json({
       success: false,
-      message: "User doesn't exist.",
+      error: "User doesn't exist.",
     });
   }
 });
 
-userRouter.post("/create-password", requireSignin, async (req, res) => {
+userRouter.post("/create-password", requireAdminSignin, async (req, res) => {
   const { email } = req.body;
   const user = await UserModel.findOne({ email });
   const newPass = `000000${Math.round(Math.random() * 999999)}`.slice(-6);
@@ -161,11 +161,11 @@ userRouter.post("/create-password", requireSignin, async (req, res) => {
     });
   }
   return res.status(400).json({
-    message: "Người dùng không tồn tại",
+    error: "Người dùng không tồn tại",
   });
 });
 
-userRouter.get("/get-user-managed", requireSignin, async (req, res) => {
+userRouter.get("/get-user-managed", requireAdminSignin, async (req, res) => {
   try {
     const txtSearch = req.query.txtSearch;
     const user = req.user;
@@ -180,12 +180,12 @@ userRouter.get("/get-user-managed", requireSignin, async (req, res) => {
   } catch {
     return res.status(401).json({
       success: false,
-      message: "Người dùng không tồn tại",
+      error: "Người dùng không tồn tại",
     });
   }
 });
 
-userRouter.put("/:id", requireSignin, async (req, res) => {
+userRouter.put("/:id", requireAdminSignin, async (req, res) => {
   const user = req.user;
   const idUserEdit = req.params.id;
   const body = req.body;
@@ -200,7 +200,7 @@ userRouter.put("/:id", requireSignin, async (req, res) => {
   } catch {
     return res.status(401).json({
       success: false,
-      message: "Người dùng không tồn tại",
+      error: "Người dùng không tồn tại",
     });
   }
 });

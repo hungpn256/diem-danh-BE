@@ -1,5 +1,5 @@
 import express from "express";
-import { requireSignin } from "../helper/login.js";
+import { requireAdminSignin, requireSignin } from "../helper/login.js";
 import { UserModel } from "../model/user.js";
 import { LeaveRequestModel } from "../model/leaveRequest.js";
 import { AttendanceModel } from "../model/attendance.js";
@@ -8,7 +8,7 @@ import { getTimeByHour, ruleAttendance } from "../helper/ruleAttendance.js";
 
 const attendanceRouter = express.Router();
 
-attendanceRouter.post("/create-token", requireSignin, async (req, res) => {
+attendanceRouter.post("/create-token", requireAdminSignin, async (req, res) => {
   try {
     const userId = req.user?._id;
     const user = await UserModel.findById(userId);
@@ -19,7 +19,7 @@ attendanceRouter.post("/create-token", requireSignin, async (req, res) => {
       token,
     });
   } catch (error) {
-    return res.status(401).json({ message: "Lỗi tạo token" });
+    return res.status(401).json({ error: "Lỗi tạo token" });
   }
 });
 
@@ -33,10 +33,10 @@ attendanceRouter.post("/attendance", requireSignin, async (req, res) => {
       tokenCheckIn: token,
     });
     if (!userManager) {
-      return res.status(401).json({ message: "Token hết hạn" });
+      return res.status(401).json({ error: "Token hết hạn" });
     }
     if (device?.deviceUniqueId !== deviceUniqueId) {
-      return res.status(401).json({ message: "Không đúng device" });
+      return res.status(401).json({ error: "Không đúng device" });
     }
     const attendanceExist = await AttendanceModel.findOne({
       userId: userId,
@@ -132,7 +132,7 @@ attendanceRouter.post("/attendance", requireSignin, async (req, res) => {
       "🚀 ~ file: attendance.js:125 ~ attendanceRouter.post ~ error:",
       error
     );
-    return res.status(401).json({ message: "Đã xay ra lỗi" });
+    return res.status(401).json({ error: "Đã xay ra lỗi" });
   }
 });
 
@@ -152,13 +152,13 @@ attendanceRouter.post("/additional-work", requireSignin, async (req, res) => {
       "🚀 ~ file: attendance.js:148 ~ attendanceRouter.post ~ error:",
       error
     );
-    return res.status(401).json({ message: "Lỗi tạo phiếu" });
+    return res.status(401).json({ error: "Lỗi tạo phiếu" });
   }
 });
 
 attendanceRouter.post(
   "/additional-work/:id",
-  requireSignin,
+  requireAdminSignin,
   async (req, res) => {
     try {
       const id = req.params.id;
@@ -196,14 +196,14 @@ attendanceRouter.post(
         "🚀 ~ file: attendance.js:148 ~ attendanceRouter.post ~ error:",
         error
       );
-      return res.status(401).json({ message: "Lỗi tạo phiếu" });
+      return res.status(401).json({ error: "Lỗi tạo phiếu" });
     }
   }
 );
 
 attendanceRouter.get(
   "/additional-work-admin",
-  requireSignin,
+  requireAdminSignin,
   async (req, res) => {
     try {
       const user = req.user;
@@ -227,7 +227,7 @@ attendanceRouter.get(
         "🚀 ~ file: attendance.js:148 ~ attendanceRouter.post ~ error:",
         error
       );
-      return res.status(401).json({ message: "Lỗi tạo phiếu" });
+      return res.status(401).json({ error: "Lỗi tạo phiếu" });
     }
   }
 );
@@ -246,7 +246,7 @@ attendanceRouter.get("/additional-work", requireSignin, async (req, res) => {
       "🚀 ~ file: attendance.js:148 ~ attendanceRouter.post ~ error:",
       error
     );
-    return res.status(401).json({ message: "Lỗi tạo phiếu" });
+    return res.status(401).json({ error: "Lỗi tạo phiếu" });
   }
 });
 
@@ -269,7 +269,7 @@ attendanceRouter.get("/", requireSignin, async (req, res) => {
       "🚀 ~ file: attendance.js:165 ~ attendanceRouter.get ~ error:",
       error
     );
-    return res.status(401).json({ message: "Có lỗi xảy ra" });
+    return res.status(401).json({ error: "Có lỗi xảy ra" });
   }
 });
 

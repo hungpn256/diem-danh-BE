@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import bcrypt from "bcryptjs";
 
 const userSchema = new mongoose.Schema({
   email: {
@@ -19,6 +18,7 @@ const userSchema = new mongoose.Schema({
   role: {
     type: String,
     required: true,
+    enum: ["admin", "user"],
   },
   currentSalary: {
     type: Number,
@@ -29,15 +29,19 @@ const userSchema = new mongoose.Schema({
   },
   managedBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    ref: "Company",
   },
   device: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Device",
   },
-  tokenCheckIn: {
-    type: String,
-  },
+});
+userSchema.pre("find", function () {
+  this.populate(["managedBy", "device"]);
+});
+
+userSchema.pre("findOne", function () {
+  this.populate(["managedBy", "device"]);
 });
 
 const UserModel = mongoose.model("User", userSchema);
