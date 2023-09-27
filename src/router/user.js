@@ -170,7 +170,8 @@ userRouter.get("/get-user-managed", requireAdminSignin, async (req, res) => {
     const txtSearch = req.query.txtSearch;
     const user = req.user;
     const users = await UserModel.find({
-      managedBy: user._id,
+      managedBy: user.managedBy?._id,
+      role: "user",
       $or: [
         { email: { $regex: txtSearch || "", $options: "i" } },
         { name: { $regex: txtSearch || "", $options: "i" } },
