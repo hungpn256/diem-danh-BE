@@ -5,16 +5,18 @@ import { LeaveRequestModel } from "../model/leaveRequest.js";
 import { AttendanceModel } from "../model/attendance.js";
 import moment from "moment";
 import { getTimeByHour, ruleAttendance } from "../helper/ruleAttendance.js";
+import { CompanyModel } from "../model/company.js";
 
 const attendanceRouter = express.Router();
 
 attendanceRouter.post("/create-token", requireAdminSignin, async (req, res) => {
   try {
-    const userId = req.user?._id;
-    const user = await UserModel.findById(userId);
     const token = `000000${Math.round(Math.random() * 999999)}`.slice(-6);
-    user.tokenCheckIn = token;
-    await user.save();
+    const company = await CompanyModel.findByIdAndUpdate(
+      req.user?.managedBy?._id,
+      { tokenCheckIn: token }
+    );
+    await company.save();
     return res.status(200).json({
       token,
     });
@@ -30,9 +32,9 @@ attendanceRouter.post("/attendance", requireSignin, async (req, res) => {
     const { userManagerId, token, deviceUniqueId } = req.body;
     const userManager = await UserModel.findOne({
       _id: userManagerId,
-      tokenCheckIn: token,
     });
-    if (!userManager) {
+    const company = await CompanyModel.findById(userManager.managedBy?._id);
+    if (!company) {
       return res.status(401).json({ error: "Token hết hạn" });
     }
     if (device?.deviceUniqueId !== deviceUniqueId) {
@@ -208,9 +210,10 @@ attendanceRouter.get(
     try {
       const user = req.user;
       const { from, to, type } = req.query;
-      const userIds = (await UserModel.find({ managedBy: user._id })).map(
-        (user) => user._id
-      );
+      const userIds = (
+        await UserModel.find({ managedBy: user.managedBy?._id })
+      ).map((user) => user._id);
+
       const leaveRequests = await LeaveRequestModel.find({
         userId: userIds,
         date: {

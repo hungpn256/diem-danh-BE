@@ -8,10 +8,11 @@ companyRouter.post("/", requireAdminSignin, async (req, res) => {
   try {
     const user = req.user;
     const body = req.body;
-    const company = new CompanyModel(body);
+    const company = new CompanyModel({ ...body, managedBy: user._id });
     await company.save();
     user.managedBy = company._id;
     await user.save();
+    return res.status(200).json({ company });
   } catch (error) {
     return res.status(401).json({ error: "lỗi tạo công ty" });
   }
