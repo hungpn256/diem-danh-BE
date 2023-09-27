@@ -156,6 +156,82 @@ attendanceRouter.post("/additional-work", requireSignin, async (req, res) => {
   }
 });
 
+attendanceRouter.post(
+  "/additional-work/:id",
+  requireSignin,
+  async (req, res) => {
+    try {
+      const id = req.params.id;
+      const body = req.body;
+      const leaveRequest = await LeaveRequestModel.findByIdAndUpdate(
+        { _id: id },
+        { status: body.status }
+      );
+      if (body.status === "ACCEPTED") {
+        const attendance = await AttendanceModel.find({
+          userId: leaveRequest.userId,
+          date: {
+            $gte: moment(leaveRequest.date).startOf("day"),
+            $lte: moment(leaveRequest.date).endOf("day"),
+          },
+        });
+        if (attendance) {
+          attendance.workSession = (
+            parseInt(leaveRequest.time, 2) | parseInt(attendance.workSession, 2)
+          ).toString(2);
+          await attendance.save();
+        } else {
+          const newAtt = new AttendanceModel({
+            date: leaveRequest.date,
+            userId: leaveRequest.userId,
+            workSession: leaveRequest.time,
+          });
+          await newAtt.save();
+        }
+      }
+      await leaveRequest.save();
+      res.status(200).json({ leaveRequest });
+    } catch (error) {
+      console.log(
+        "🚀 ~ file: attendance.js:148 ~ attendanceRouter.post ~ error:",
+        error
+      );
+      return res.status(401).json({ message: "Lỗi tạo phiếu" });
+    }
+  }
+);
+
+attendanceRouter.get(
+  "/additional-work-admin",
+  requireSignin,
+  async (req, res) => {
+    try {
+      const user = req.user;
+      const { from, to, type } = req.query;
+      const userIds = (await UserModel.find({ managedBy: user._id })).map(
+        (user) => user._id
+      );
+      const leaveRequests = await LeaveRequestModel.find({
+        userId: userIds,
+        date: {
+          $gte: from,
+          $lte: to,
+        },
+        type,
+      })
+        .sort({ createdAt: "ascending" })
+        .populate("userId");
+      return res.status(200).json({ leaveRequests });
+    } catch (error) {
+      console.log(
+        "🚀 ~ file: attendance.js:148 ~ attendanceRouter.post ~ error:",
+        error
+      );
+      return res.status(401).json({ message: "Lỗi tạo phiếu" });
+    }
+  }
+);
+
 attendanceRouter.get("/additional-work", requireSignin, async (req, res) => {
   try {
     const { where, sort } = req.query;
