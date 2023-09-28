@@ -142,6 +142,17 @@ attendanceRouter.post("/additional-work", requireSignin, async (req, res) => {
   try {
     const user = req.user;
     const body = req.body;
+    if (body.type === "LEAVE") {
+      const leaveOff = body.time === "11" ? 1 : 0.5;
+      if (user.numOfDaysOff < leaveOff) {
+        return res
+          .status(401)
+          .json({ error: "Số ngày nghỉ phép còn lại không đủ" });
+      } else {
+        user.numOfDaysOff -= leaveOff;
+        await user.save();
+      }
+    }
     const leaveRequest = new LeaveRequestModel({
       ...body,
       status: "PENDING",
@@ -190,6 +201,11 @@ attendanceRouter.put(
           });
           await newAtt.save();
         }
+      } else {
+        const user = await UserModel.findById(leaveRequest.userId);
+        const leaveOff = leaveRequest.time === "11" ? 1 : 0.5;
+        user.numOfDaysOff += leaveOff;
+        await user.save();
       }
       await leaveRequest.save();
       res.status(200).json({ leaveRequest });
