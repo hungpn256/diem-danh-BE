@@ -21,7 +21,7 @@ const leaveRequestSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["PENDING", "APPROVED", "REJECTED"],
+    enum: ["PENDING", "ACCEPTED", "REJECTED"],
   },
   type: {
     type: String,

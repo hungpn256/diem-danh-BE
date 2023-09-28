@@ -158,7 +158,7 @@ attendanceRouter.post("/additional-work", requireSignin, async (req, res) => {
   }
 });
 
-attendanceRouter.post(
+attendanceRouter.put(
   "/additional-work/:id",
   requireAdminSignin,
   async (req, res) => {
@@ -170,7 +170,7 @@ attendanceRouter.post(
         { status: body.status }
       );
       if (body.status === "ACCEPTED") {
-        const attendance = await AttendanceModel.find({
+        const attendance = await AttendanceModel.findOne({
           userId: leaveRequest.userId,
           date: {
             $gte: moment(leaveRequest.date).startOf("day"),

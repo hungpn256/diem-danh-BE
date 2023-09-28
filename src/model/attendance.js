@@ -20,7 +20,7 @@ const attendanceSchema = new mongoose.Schema({
   },
   latePenalty: {
     type: Number,
-    required: true,
+    default: 0,
   },
 });
 
