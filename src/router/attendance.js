@@ -49,10 +49,7 @@ attendanceRouter.post("/attendance", requireSignin, async (req, res) => {
       console.log(attendanceExist.checkOutTime);
       console.log(
         "getTimeByHour",
-        getTimeByHour(
-          (ruleAttendance.morning.startHour + ruleAttendance.morning.endHour) /
-            2
-        )
+        moment().diff(getTimeByHour(ruleAttendance.morning.startHour), "minute")
       );
       if (
         moment(attendanceExist.checkOutTime).isAfter(
@@ -125,14 +122,41 @@ attendanceRouter.post("/attendance", requireSignin, async (req, res) => {
       await attendanceExist.save();
       return res.status(200).json({ attendance: attendanceExist });
     } else {
+      let latePenalty;
+      if (
+        moment().isBefore(
+          getTimeByHour(
+            (ruleAttendance.morning.startHour +
+              ruleAttendance.morning.endHour) /
+              2
+          )
+        )
+      ) {
+        latePenalty = moment().diff(
+          getTimeByHour(ruleAttendance.morning.startHour),
+          "minute"
+        );
+      }
+      if (
+        moment().isBefore(
+          getTimeByHour(
+            (ruleAttendance.afternoon.startHour +
+              ruleAttendance.afternoon.endHour) /
+              2
+          )
+        )
+      ) {
+        latePenalty = moment().diff(
+          getTimeByHour(ruleAttendance.afternoon.startHour),
+          "minute"
+        );
+      }
+
       const attendance = new AttendanceModel({
         userId,
         date: moment().startOf("date"),
         checkInTime: moment(),
-        latePenalty: -getTimeByHour(ruleAttendance.morning.startHour).diff(
-          moment(),
-          "minute"
-        ),
+        latePenalty,
       });
       await attendance.save();
       return res.status(200).json({ attendance });

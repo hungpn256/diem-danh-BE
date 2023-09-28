@@ -6,7 +6,7 @@ export const requireSignin = async (req, res, next) => {
   try {
     if (req.headers.authorization) {
       const token = req.headers.authorization.split(" ")[1];
-      const userId = "6513f4ecd548de32140067c4";
+      const userId = jwt.verify(token, keys.jwt.secret)?._id;
       const user = await UserModel.findById(userId);
       delete user.password;
       req.user = user;

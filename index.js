@@ -7,8 +7,15 @@ import mongoose from "mongoose";
 import { keys } from "./src/config/key.js";
 import morgan from "morgan";
 
+morgan.token("body", (req, res) => JSON.stringify(req.body));
 const app = express();
-app.use(morgan("combined"));
+
+app.use(
+  morgan(
+    ":method :url :status :response-time ms - :res[content-length] :body - :req[content-length]"
+  )
+);
+
 app.use(express.json());
 app.use(cors());
 app.get("/", (req, res) => {
