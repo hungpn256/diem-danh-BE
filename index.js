@@ -5,8 +5,10 @@ import cors from "cors";
 import { router } from "./src/router/index.js";
 import mongoose from "mongoose";
 import { keys } from "./src/config/key.js";
+import morgan from "morgan";
 
 const app = express();
+app.use(morgan("combined"));
 app.use(express.json());
 app.use(cors());
 app.get("/", (req, res) => {
