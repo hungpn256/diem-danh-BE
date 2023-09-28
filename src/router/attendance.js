@@ -46,6 +46,14 @@ attendanceRouter.post("/attendance", requireSignin, async (req, res) => {
     });
     if (attendanceExist) {
       attendanceExist.checkOutTime = moment().toDate();
+      console.log(attendanceExist.checkOutTime);
+      console.log(
+        "getTimeByHour",
+        getTimeByHour(
+          (ruleAttendance.morning.startHour + ruleAttendance.morning.endHour) /
+            2
+        )
+      );
       if (
         moment(attendanceExist.checkOutTime).isAfter(
           getTimeByHour(
@@ -65,7 +73,7 @@ attendanceRouter.post("/attendance", requireSignin, async (req, res) => {
           moment(attendanceExist.checkInTime),
           "hour"
         ) >
-          (ruleAttendance.morning.startHour - ruleAttendance.morning.endHour) /
+          (ruleAttendance.morning.endHour - ruleAttendance.morning.startHour) /
             2
       ) {
         attendanceExist.workSession = (
@@ -106,8 +114,8 @@ attendanceRouter.post("/attendance", requireSignin, async (req, res) => {
           moment(attendanceExist.checkInTime),
           "hour"
         ) >
-          (ruleAttendance.afternoon.startHour -
-            ruleAttendance.afternoon.endHour) /
+          (ruleAttendance.afternoon.endHour -
+            ruleAttendance.afternoon.startHour) /
             2
       ) {
         attendanceExist.workSession = (
