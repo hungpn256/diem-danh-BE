@@ -4,15 +4,15 @@ import { UserModel } from "../model/user.js";
 
 export const requireSignin = async (req, res, next) => {
   try {
-    // if (req.headers.authorization) {
-    //   const token = req.headers.authorization.split(" ")[1];
-    const userId = "6513f4ecd548de32140067c4";
-    const user = await UserModel.findById(userId);
-    delete user.password;
-    req.user = user;
-    // } else {
-    //   return res.status(401).json({ error: "Authorization required" });
-    // }
+    if (req.headers.authorization) {
+      const token = req.headers.authorization.split(" ")[1];
+      const userId = "6513f4ecd548de32140067c4";
+      const user = await UserModel.findById(userId);
+      delete user.password;
+      req.user = user;
+    } else {
+      return res.status(401).json({ error: "Authorization required" });
+    }
     next();
   } catch {
     return res.status(401).json({ error: "Authorization required" });

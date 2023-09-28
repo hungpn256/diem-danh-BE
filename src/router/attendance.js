@@ -72,7 +72,7 @@ attendanceRouter.post("/attendance", requireSignin, async (req, res) => {
         moment(attendanceExist.checkOutTime).diff(
           moment(attendanceExist.checkInTime),
           "hour"
-        ) >
+        ) >=
           (ruleAttendance.morning.endHour - ruleAttendance.morning.startHour) /
             2
       ) {
