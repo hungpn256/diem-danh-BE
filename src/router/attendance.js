@@ -29,11 +29,11 @@ attendanceRouter.post("/attendance", requireSignin, async (req, res) => {
   try {
     const userId = req.user?._id;
     const device = req.user?.device;
-    const { userManagerId, token, deviceUniqueId } = req.body;
-    const userManager = await UserModel.findOne({
-      _id: userManagerId,
+    const { companyId, token, deviceUniqueId } = req.body;
+    const company = await CompanyModel.findOne({
+      _id: companyId,
+      tokenCheckIn: token,
     });
-    const company = await CompanyModel.findById(userManager.managedBy?._id);
     if (!company) {
       return res.status(401).json({ error: "Token hết hạn" });
     }
