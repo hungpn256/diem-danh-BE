@@ -136,8 +136,7 @@ attendanceRouter.post("/attendance", requireSignin, async (req, res) => {
           getTimeByHour(ruleAttendance.morning.startHour),
           "minute"
         );
-      }
-      if (
+      } else if (
         moment().isBefore(
           getTimeByHour(
             (ruleAttendance.afternoon.startHour +
