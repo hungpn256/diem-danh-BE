@@ -44,9 +44,10 @@ mongoose
           },
           workSession: "11",
         }).distinct("userId");
-        const users = await UserModel.find({ _id: { $nin: userIds } }).distinct(
-          "email"
-        );
+        const users = await UserModel.find({
+          _id: { $nin: userIds },
+          role: "user",
+        }).distinct("email");
         const sendMailPromise = users.map((email) => {
           return sendEmail({
             to: email,
