@@ -10,6 +10,7 @@ import { CronJob } from "cron";
 import { UserModel } from "./src/model/user.js";
 import { AttendanceModel } from "./src/model/attendance.js";
 import sendEmail from "./src/service/mailer.js";
+import moment from "moment";
 
 morgan.token("body", (req, res) => JSON.stringify(req.body));
 const app = express();
@@ -34,7 +35,7 @@ mongoose
   .then(async () => {
     console.log(`MongoDB Connected!`);
     const job = new CronJob(
-      "15 15 * * 2-6",
+      "00 25 15 * * 1-5",
       async function () {
         console.log("You will see this message every second");
         const userIds = await AttendanceModel.find({
