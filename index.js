@@ -34,7 +34,7 @@ mongoose
   .then(async () => {
     console.log(`MongoDB Connected!`);
     const job = new CronJob(
-      "0 8 * * 2-6",
+      "15 15 * * 2-6",
       async function () {
         console.log("You will see this message every second");
         const userIds = await AttendanceModel.find({
