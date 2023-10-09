@@ -206,4 +206,33 @@ userRouter.put("/:id", requireAdminSignin, async (req, res) => {
   }
 });
 
+userRouter.post("/change-password", requireAdminSignin, async (req, res) => {
+  const user = req.user;
+  const idUserEdit = user._id;
+  const body = req.body;
+  try {
+    const userEdit = await UserModel.findOne({ _id: idUserEdit });
+    bcrypt.compare(body.password, userEdit.password).then(async (isMatch) => {
+      if (isMatch) {
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(body.newPassword, salt);
+        userEdit.password = hash;
+        await userEdit.save();
+        delete userEdit.password;
+        return res.status(200).json({ user: userEdit });
+      } else {
+        return res.status(401).json({
+          success: false,
+          error: "Sai mật khẩu",
+        });
+      }
+    });
+  } catch {
+    return res.status(401).json({
+      success: false,
+      error: "Sai mật khẩu",
+    });
+  }
+});
+
 export { userRouter };

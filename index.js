@@ -6,6 +6,10 @@ import { router } from "./src/router/index.js";
 import mongoose from "mongoose";
 import { keys } from "./src/config/key.js";
 import morgan from "morgan";
+import { CronJob } from "cron";
+import { UserModel } from "./src/model/user.js";
+import { AttendanceModel } from "./src/model/attendance.js";
+import sendEmail from "./src/service/mailer.js";
 
 morgan.token("body", (req, res) => JSON.stringify(req.body));
 const app = express();
@@ -29,7 +33,36 @@ mongoose
   })
   .then(async () => {
     console.log(`MongoDB Connected!`);
+    const job = new CronJob(
+      "0 8 * * 2-6",
+      async function () {
+        console.log("You will see this message every second");
+        const userIds = await AttendanceModel.find({
+          date: {
+            $lte: moment().subtract(1, "day").endOf("day"),
+            $gte: moment().subtract(1, "day").startOf("day"),
+          },
+          workSession: "11",
+        }).distinct("userId");
+        const users = await UserModel.find({ _id: { $nin: userIds } }).distinct(
+          "email"
+        );
+        const sendMailPromise = users.map((email) => {
+          return sendEmail({
+            to: email,
+            html: `Hqua Đéo chấm công à`,
+            subject: "Chấm công",
+            text: "Chấm công",
+          });
+        });
+      },
+      null,
+      true,
+      "UTC+7"
+    );
+    job.start();
   })
+
   .catch((err) => console.log(err));
 
 app.use("/api", router);
