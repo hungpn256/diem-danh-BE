@@ -22,7 +22,8 @@ companyRouter.put("/:id", requireAdminSignin, async (req, res) => {
   try {
     const body = req.body;
     const id = req.params.id;
-    await CompanyModel.findByIdAndUpdate(id, body);
+    const company = await CompanyModel.findByIdAndUpdate(id, body);
+    return res.status(200).json({ company });
   } catch (error) {
     return res.status(401).json({ error: "lỗi chỉnh sửa công ty" });
   }
