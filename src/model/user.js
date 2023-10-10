@@ -44,6 +44,10 @@ userSchema.pre("findOne", function () {
   this.populate(["managedBy", "device"]);
 });
 
+userSchema.pre("findOneAndUpdate", function () {
+  this.populate(["managedBy", "device"]);
+});
+
 const UserModel = mongoose.model("User", userSchema);
 
 export { UserModel };

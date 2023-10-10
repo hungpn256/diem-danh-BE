@@ -6,12 +6,15 @@ import { AttendanceModel } from "../model/attendance.js";
 import moment from "moment";
 import { getTimeByHour, ruleAttendance } from "../helper/ruleAttendance.js";
 import { CompanyModel } from "../model/company.js";
+import { generateRandomString } from "./user.js";
+import { countWeekdaysInCurrentMonth } from "../helper/ateendance.js";
+import { formatIsParsingCompatible } from "appcenter-cli/dist/util/interaction/io-options.js";
 
 const attendanceRouter = express.Router();
 
 attendanceRouter.post("/create-token", requireAdminSignin, async (req, res) => {
   try {
-    const token = `000000${Math.round(Math.random() * 999999)}`.slice(-6);
+    const token = generateRandomString();
     const company = await CompanyModel.findByIdAndUpdate(
       req.user?.managedBy?._id,
       { tokenCheckIn: token }
@@ -300,6 +303,63 @@ attendanceRouter.get("/additional-work", requireSignin, async (req, res) => {
   }
 });
 
+attendanceRouter.get("/salary", requireAdminSignin, async (req, res) => {
+  try {
+    const user = req.user;
+    const { from, to } = req.query;
+    const users = await UserModel.find({
+      managedBy: user.managedBy._id,
+      role: "user",
+    });
+    const result = [];
+    for (let u of users) {
+      const attendances = await AttendanceModel.find({
+        date: {
+          $gte: from,
+          $lte: to,
+        },
+        userId: u._id,
+      });
+
+      const attendanceIsValid = attendances.filter(
+        (item) =>
+          moment(item.date).get("isoWeekday") >= 1 &&
+          moment(item.date).get("isoWeekday") <= 5
+      );
+
+      const workDayValid = attendanceIsValid.reduce((prev, item) => {
+        let count = 0;
+        if (item.workSession === "11") {
+          count = 1;
+        } else if (item.workSession !== "00") {
+          count = 0.5;
+        }
+        return prev + count;
+      }, 0);
+
+      const latePenalty = attendanceIsValid.reduce((prev, item) => {
+        return prev + item.latePenalty ? item.latePenalty * 10000 : 0;
+      }, 0);
+      const salary = Math.max(
+        0,
+        (workDayValid / countWeekdaysInCurrentMonth()) * u.currentSalary -
+          latePenalty
+      );
+      result.push({ user: u, salary, workDayValid });
+    }
+
+    return res.status(200).json({
+      result,
+    });
+  } catch (error) {
+    console.log(
+      "🚀 ~ file: attendance.js:165 ~ attendanceRouter.get ~ error:",
+      error
+    );
+    return res.status(401).json({ error: "Có lỗi xảy ra" });
+  }
+});
+
 attendanceRouter.get("/", requireSignin, async (req, res) => {
   try {
     const user = req.user;
@@ -313,7 +373,13 @@ attendanceRouter.get("/", requireSignin, async (req, res) => {
     }).sort({
       date: "ascending",
     });
-    return res.status(200).json({ attendances });
+    return res.status(200).json({
+      attendances: attendances.filter(
+        (item) =>
+          moment(item.date).get("isoWeekday") >= 1 &&
+          moment(item.date).get("isoWeekday") <= 5
+      ),
+    });
   } catch (error) {
     console.log(
       "🚀 ~ file: attendance.js:165 ~ attendanceRouter.get ~ error:",

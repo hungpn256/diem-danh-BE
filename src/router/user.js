@@ -5,6 +5,7 @@ import { requireAdminSignin, requireSignin } from "../helper/login.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { DeviceModel } from "../model/device.js";
+import sendEmail from "../service/mailer.js";
 
 const { secret, tokenLife } = keys.jwt;
 const userRouter = express.Router();
@@ -82,21 +83,19 @@ userRouter.post("/login", async (req, res) => {
           secret,
           { expiresIn: tokenLife },
           async (err, token) => {
-            if (user.role === "user") {
-              if (deviceUniqueId && deviceName) {
-                const device = new DeviceModel({
-                  deviceUniqueId,
-                  name: deviceName,
-                });
-                await device.save();
-                user.device = device._id;
-                await user.save();
-              } else {
-                return res.status(401).json({
-                  success: false,
-                  error: "Không thể cập nhật thông tin thiết bị",
-                });
-              }
+            if (deviceUniqueId && deviceName) {
+              const device = new DeviceModel({
+                deviceUniqueId,
+                name: deviceName,
+              });
+              await device.save();
+              user.device = device._id;
+              await user.save();
+            } else {
+              return res.status(401).json({
+                success: false,
+                error: "Không thể cập nhật thông tin thiết bị",
+              });
             }
             delete user.password;
             return res.status(200).json({
@@ -148,18 +147,24 @@ userRouter.get("/profile", requireSignin, async (req, res) => {
 userRouter.post("/create-password", requireAdminSignin, async (req, res) => {
   const { email } = req.body;
   const user = await UserModel.findOne({ email });
-  const newPass = `000000${Math.round(Math.random() * 999999)}`.slice(-6);
+  const newPass = generateRandomString();
   if (user) {
     const salt = await bcrypt.genSalt(10);
     const hash = await bcrypt.hash(newPass, salt);
     user.password = hash;
     await user.save();
+    await sendEmail({
+      to: email,
+      subject: "Mật khẩu",
+      html: "Mật khẩu mới của bạn là: " + newPass,
+    });
     return res.status(200).json({
       email,
       password: newPass,
       _id: user._id,
     });
   }
+
   return res.status(400).json({
     error: "Người dùng không tồn tại",
   });
@@ -234,5 +239,29 @@ userRouter.post("/change-password", requireAdminSignin, async (req, res) => {
     });
   }
 });
+
+export function generateRandomString() {
+  const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const numbers = "0123456789";
+
+  // Tạo một ký tự ngẫu nhiên từ danh sách chữ cái
+  const randomLetter = letters[Math.floor(Math.random() * letters.length)];
+
+  // Tạo một số ngẫu nhiên từ danh sách số
+  const randomNumber = numbers[Math.floor(Math.random() * numbers.length)];
+
+  // Tạo một chuỗi ngẫu nhiên bằng cách kết hợp ký tự và số ngẫu nhiên
+  let randomString = randomLetter + randomNumber;
+
+  // Tạo thêm 4 ký tự ngẫu nhiên khác từ cả danh sách chữ cái và số
+  for (let i = 0; i < 4; i++) {
+    const characters = letters + numbers;
+    const randomChar =
+      characters[Math.floor(Math.random() * characters.length)];
+    randomString += randomChar;
+  }
+
+  return randomString;
+}
 
 export { userRouter };
