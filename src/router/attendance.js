@@ -8,7 +8,6 @@ import { getTimeByHour, ruleAttendance } from "../helper/ruleAttendance.js";
 import { CompanyModel } from "../model/company.js";
 import { generateRandomString } from "./user.js";
 import { countWeekdaysInCurrentMonth } from "../helper/ateendance.js";
-import { formatIsParsingCompatible } from "appcenter-cli/dist/util/interaction/io-options.js";
 
 const attendanceRouter = express.Router();
 
