@@ -211,7 +211,7 @@ userRouter.put("/:id", requireAdminSignin, async (req, res) => {
   }
 });
 
-userRouter.post("/change-password", requireAdminSignin, async (req, res) => {
+userRouter.post("/change-password", requireSignin, async (req, res) => {
   const user = req.user;
   const idUserEdit = user._id;
   const body = req.body;
