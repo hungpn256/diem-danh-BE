@@ -1,6 +1,7 @@
 import express from "express";
 import { requireAdminSignin, requireSignin } from "../helper/login.js";
 import { UserModel } from "../model/user.js";
+import { SalaryModel } from "../model/salary.js";
 import { LeaveRequestModel } from "../model/leaveRequest.js";
 import { AttendanceModel } from "../model/attendance.js";
 import moment from "moment";
@@ -8,7 +9,7 @@ import { getTimeByHour, ruleAttendance } from "../helper/ruleAttendance.js";
 import { CompanyModel } from "../model/company.js";
 import { generateRandomString } from "./user.js";
 import { countWeekdaysInCurrentMonth } from "../helper/ateendance.js";
-
+import { getSalary } from "../helper/salary.js";
 const attendanceRouter = express.Router();
 
 attendanceRouter.post("/create-token", requireAdminSignin, async (req, res) => {
@@ -51,29 +52,20 @@ attendanceRouter.post("/attendance", requireSignin, async (req, res) => {
       console.log(attendanceExist.checkOutTime);
       console.log(
         "getTimeByHour",
-        moment().diff(getTimeByHour(ruleAttendance.morning.startHour), "minute")
+        moment().diff(getTimeByHour(company.morningStartTime), "minute")
       );
       if (
         moment(attendanceExist.checkOutTime).isAfter(
-          getTimeByHour(
-            (ruleAttendance.morning.startHour +
-              ruleAttendance.morning.endHour) /
-              2
-          )
+          getTimeByHour((company.morningStartTime + company.morningEndTime) / 2)
         ) &&
         moment(attendanceExist.checkInTime).isBefore(
-          getTimeByHour(
-            (ruleAttendance.morning.startHour +
-              ruleAttendance.morning.endHour) /
-              2
-          )
+          getTimeByHour((company.morningStartTime + company.morningEndTime) / 2)
         ) &&
         moment(attendanceExist.checkOutTime).diff(
           moment(attendanceExist.checkInTime),
           "hour"
         ) >=
-          (ruleAttendance.morning.endHour - ruleAttendance.morning.startHour) /
-            2
+          (company.morningEndTime - company.morningStartTime) / 2
       ) {
         attendanceExist.workSession = (
           parseInt("10", 2) | parseInt(attendanceExist.workSession, 2)
@@ -81,41 +73,31 @@ attendanceRouter.post("/attendance", requireSignin, async (req, res) => {
       }
       console.log(
         getTimeByHour(
-          (ruleAttendance.afternoon.startHour +
-            ruleAttendance.afternoon.endHour) /
-            2
+          (company.afternoonStartTime + company.afternoonEndTime) / 2
         ),
         moment(attendanceExist.checkInTime),
         moment(attendanceExist.checkInTime).isBefore(
           getTimeByHour(
-            (ruleAttendance.afternoon.startHour +
-              ruleAttendance.afternoon.endHour) /
-              2
+            (company.afternoonStartTime + company.afternoonEndTime) / 2
           )
         )
       );
       if (
         moment(attendanceExist.checkOutTime).isAfter(
           getTimeByHour(
-            (ruleAttendance.afternoon.startHour +
-              ruleAttendance.afternoon.endHour) /
-              2
+            (company.afternoonStartTime + company.afternoonEndTime) / 2
           )
         ) &&
         moment(attendanceExist.checkInTime).isBefore(
           getTimeByHour(
-            (ruleAttendance.afternoon.startHour +
-              ruleAttendance.afternoon.endHour) /
-              2
+            (company.afternoonStartTime + company.afternoonEndTime) / 2
           )
         ) &&
         moment(attendanceExist.checkOutTime).diff(
           moment(attendanceExist.checkInTime),
           "hour"
         ) >
-          (ruleAttendance.afternoon.endHour -
-            ruleAttendance.afternoon.startHour) /
-            2
+          (company.afternoonEndTime - company.afternoonStartTime) / 2
       ) {
         attendanceExist.workSession = (
           parseInt("01", 2) | parseInt(attendanceExist.workSession, 2)
@@ -127,28 +109,22 @@ attendanceRouter.post("/attendance", requireSignin, async (req, res) => {
       let latePenalty;
       if (
         moment().isBefore(
-          getTimeByHour(
-            (ruleAttendance.morning.startHour +
-              ruleAttendance.morning.endHour) /
-              2
-          )
+          getTimeByHour((company.morningStartTime + company.morningEndTime) / 2)
         )
       ) {
         latePenalty = moment().diff(
-          getTimeByHour(ruleAttendance.morning.startHour),
+          getTimeByHour(company.morningStartTime),
           "minute"
         );
       } else if (
         moment().isBefore(
           getTimeByHour(
-            (ruleAttendance.afternoon.startHour +
-              ruleAttendance.afternoon.endHour) /
-              2
+            (company.afternoonStartTime + company.afternoonEndTime) / 2
           )
         )
       ) {
         latePenalty = moment().diff(
-          getTimeByHour(ruleAttendance.afternoon.startHour),
+          getTimeByHour(company.afternoonStartTime),
           "minute"
         );
       }
@@ -306,49 +282,29 @@ attendanceRouter.get("/salary", requireAdminSignin, async (req, res) => {
   try {
     const user = req.user;
     const { from, to } = req.query;
-    const users = await UserModel.find({
+    let salaryClosed = false;
+    let result = [];
+    let salaries = await SalaryModel.findOne({
+      time: {
+        $gte: from,
+        $lte: to,
+      },
       managedBy: user.managedBy._id,
-      role: "user",
-    });
-    const result = [];
-    for (let u of users) {
-      const attendances = await AttendanceModel.find({
-        date: {
-          $gte: from,
-          $lte: to,
-        },
-        userId: u._id,
+    }).populate("salary.user");
+
+    if (salaries || moment(to).isBefore(moment())) {
+      salaryClosed = true;
+      result = salaries?.salary ?? [];
+    } else {
+      const users = await UserModel.find({
+        managedBy: user.managedBy._id,
+        role: "user",
       });
-
-      const attendanceIsValid = attendances.filter(
-        (item) =>
-          moment(item.date).get("isoWeekday") >= 1 &&
-          moment(item.date).get("isoWeekday") <= 5
-      );
-
-      const workDayValid = attendanceIsValid.reduce((prev, item) => {
-        let count = 0;
-        if (item.workSession === "11") {
-          count = 1;
-        } else if (item.workSession !== "00") {
-          count = 0.5;
-        }
-        return prev + count;
-      }, 0);
-
-      const latePenalty = attendanceIsValid.reduce((prev, item) => {
-        return prev + item.latePenalty ? item.latePenalty * 10000 : 0;
-      }, 0);
-      const salary = Math.max(
-        0,
-        (workDayValid / countWeekdaysInCurrentMonth()) * u.currentSalary -
-          latePenalty
-      );
-      result.push({ user: u, salary, workDayValid });
+      result = await getSalary(from, to, users);
     }
-
     return res.status(200).json({
       result,
+      salaryClosed,
     });
   } catch (error) {
     console.log(
@@ -358,6 +314,62 @@ attendanceRouter.get("/salary", requireAdminSignin, async (req, res) => {
     return res.status(401).json({ error: "Có lỗi xảy ra" });
   }
 });
+
+attendanceRouter.post(
+  "/salary-closed",
+  requireAdminSignin,
+  async (req, res) => {
+    try {
+      const user = req.user;
+      const { from, to } = req.body;
+      let salaries = await SalaryModel.findOne({
+        time: {
+          $gte: from,
+          $lte: to,
+        },
+        managedBy: user.managedBy._id,
+      });
+
+      if (salaries) {
+        return res.status(404).json({
+          error: "Lương tháng này đã được chốt",
+        });
+      } else {
+        const users = await UserModel.find({
+          managedBy: user.managedBy._id,
+          role: "user",
+        });
+        const result = await getSalary(from, to, users);
+        console.log(
+          "=====",
+          result.map((item) => ({
+            ...item,
+            user: item.user._id,
+          }))
+        );
+        const salary = new SalaryModel({
+          salary: result.map((item) => ({
+            ...item,
+            user: item.user._id,
+          })),
+          time: moment(),
+          managedBy: user.managedBy._id,
+        });
+
+        await salary.save();
+        return res.status(200).json({
+          result: true,
+        });
+      }
+    } catch (error) {
+      console.log(
+        "🚀 ~ file: attendance.js:165 ~ attendanceRouter.get ~ error:",
+        error
+      );
+      return res.status(401).json({ error: "Có lỗi xảy ra" });
+    }
+  }
+);
 
 attendanceRouter.get("/", requireSignin, async (req, res) => {
   try {
