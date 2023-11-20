@@ -10,6 +10,7 @@ import { CompanyModel } from "../model/company.js";
 import { generateRandomString } from "./user.js";
 import { countWeekdaysInCurrentMonth } from "../helper/ateendance.js";
 import { getSalary } from "../helper/salary.js";
+import sendEmail from "../service/mailer.js";
 const attendanceRouter = express.Router();
 
 attendanceRouter.post("/create-token", requireAdminSignin, async (req, res) => {
@@ -168,7 +169,24 @@ attendanceRouter.post("/additional-work", requireSignin, async (req, res) => {
       userId: user._id,
     });
     await leaveRequest.save();
-    res.status(200).json({ leaveRequest });
+    const admin = await UserModel.findOne({
+      managedBy: user.managedBy?._id,
+      role: "admin",
+    });
+    if (admin) {
+      const type =
+        leaveRequest.type === "ADDITIONAL" ? "BỔ SUNG CÔNG" : "NGHỈ PHÉP";
+      await sendEmail({
+        to: admin.email,
+        subject: type,
+        text: `${
+          user.name
+        } đã đăng ký đơn ${type.toLowerCase()} vào ngày ${moment(
+          leaveRequest.time
+        ).format("YYYY-MM-DD")}`,
+      });
+    }
+    return res.status(200).json({ leaveRequest });
   } catch (error) {
     console.log(
       "🚀 ~ file: attendance.js:148 ~ attendanceRouter.post ~ error:",
@@ -188,10 +206,10 @@ attendanceRouter.put(
       const leaveRequest = await LeaveRequestModel.findByIdAndUpdate(
         { _id: id },
         { status: body.status }
-      );
+      ).populate("userId");
       if (body.status === "ACCEPTED") {
         const attendance = await AttendanceModel.findOne({
-          userId: leaveRequest.userId,
+          userId: leaveRequest.userId?._id,
           date: {
             $gte: moment(leaveRequest.date).startOf("day"),
             $lte: moment(leaveRequest.date).endOf("day"),
@@ -205,15 +223,32 @@ attendanceRouter.put(
         } else {
           const newAtt = new AttendanceModel({
             date: leaveRequest.date,
-            userId: leaveRequest.userId,
+            userId: leaveRequest.userId?._id,
             workSession: leaveRequest.time,
           });
           await newAtt.save();
         }
+
+        const type =
+          leaveRequest.type === "ADDITIONAL" ? "BỔ SUNG CÔNG" : "NGHỈ PHÉP";
+        await sendEmail({
+          to: leaveRequest.userId?.email,
+          subject: type,
+          text: `Đơn ${type.toLowerCase()} vào ngày ${moment(
+            leaveRequest.time
+          ).format("YYYY-MM-DD")} đã được xét duyệt`,
+        });
       } else {
-        const user = await UserModel.findById(leaveRequest.userId);
+        const user = await UserModel.findById(leaveRequest.userId?._id);
         const leaveOff = leaveRequest.time === "11" ? 1 : 0.5;
         user.numOfDaysOff += leaveOff;
+        await sendEmail({
+          to: leaveRequest.userId?.email,
+          subject: type,
+          text: `Đơn ${type.toLowerCase()} vào ngày ${moment(
+            leaveRequest.time
+          ).format("YYYY-MM-DD")} đã bị từ chối`,
+        });
         await user.save();
       }
       await leaveRequest.save();
@@ -355,8 +390,17 @@ attendanceRouter.post(
           time: moment(),
           managedBy: user.managedBy._id,
         });
-
+        const month = moment(from).get("month") + 1;
         await salary.save();
+        await Promise.all(
+          result.map((item) => {
+            return sendEmail({
+              to: item.user.email,
+              subject: `LƯƠNG THÁNG ${month}`,
+              text: `Tổng kết lương tháng ${month}\nTổng số công: ${item.workDayValid}\nSố tiền nhận: ${item.salary}`,
+            });
+          })
+        );
         return res.status(200).json({
           result: true,
         });
