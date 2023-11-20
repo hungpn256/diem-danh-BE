@@ -397,7 +397,11 @@ attendanceRouter.post(
             return sendEmail({
               to: item.user.email,
               subject: `LƯƠNG THÁNG ${month}`,
-              text: `Tổng kết lương tháng ${month}\nTổng số công: ${item.workDayValid}\nSố tiền nhận: ${item.salary}`,
+              text: `Tổng kết lương tháng ${month}\nLương hiện tại: ${Math.round(
+                item.user.currentSalary
+              )}\nTổng số công: ${
+                item.workDayValid
+              }\nSố tiền nhận: ${Math.round(item.salary)}`,
             });
           })
         );
