@@ -1,8 +1,60 @@
 import express from "express";
 import { requireAdminSignin } from "../helper/login.js";
 import { CompanyModel } from "../model/company.js";
+import { DepartmentModel } from "../model/department.js";
 
 const companyRouter = express.Router();
+
+companyRouter.post("/department", requireAdminSignin, async (req, res) => {
+  try {
+    const user = req.user;
+    const body = req.body;
+    const department = new DepartmentModel({
+      ...body,
+      company: user.managedBy._id,
+    });
+    await department.save();
+    return res.status(200).json({ department });
+  } catch (error) {
+    return res.status(401).json({ error: "lỗi tạo bộ phận" });
+  }
+});
+
+companyRouter.get("/department", requireAdminSignin, async (req, res) => {
+  try {
+    const user = req.user;
+    const departments = DepartmentModel.find({ company: user.managedBy._id });
+    return res.status(200).json({ departments });
+  } catch (error) {
+    return res.status(401).json({ error: "lỗi tạo bộ phận" });
+  }
+});
+
+companyRouter.delete(
+  "/department/:_id",
+  requireAdminSignin,
+  async (req, res) => {
+    try {
+      const _id = req.params._id;
+      await DepartmentModel.findByIdAndDelete(_id);
+      return res.status(200).json({ success: true });
+    } catch (error) {
+      return res.status(401).json({ error: "lỗi xoá bộ phận" });
+    }
+  }
+);
+
+companyRouter.put("/department/:_id", requireAdminSignin, async (req, res) => {
+  try {
+    const _id = req.params._id;
+    await DepartmentModel.findByIdAndUpdate(_id, {
+      ...req.body,
+    });
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    return res.status(401).json({ error: "lỗi sửa bộ phận" });
+  }
+});
 
 companyRouter.post("/", requireAdminSignin, async (req, res) => {
   try {

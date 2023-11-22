@@ -390,7 +390,7 @@ attendanceRouter.post(
           time: moment(),
           managedBy: user.managedBy._id,
         });
-        const month = moment(from).get("month") + 1;
+        const month = moment(to).get("month") + 1;
         await salary.save();
         await Promise.all(
           result.map((item) => {
