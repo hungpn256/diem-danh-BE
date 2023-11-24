@@ -40,8 +40,15 @@ userRouter.post("/register", async (req, res) => {
 
 userRouter.post("/add-user", requireAdminSignin, async (req, res) => {
   try {
-    const { email, phoneNumber, password, name, role, currentSalary } =
-      req.body;
+    const {
+      email,
+      phoneNumber,
+      password,
+      name,
+      role,
+      currentSalary,
+      department,
+    } = req.body;
     const existedUser = await UserModel.findOne({ email: email });
     console.log("existedUser", existedUser);
     if (existedUser) {
@@ -56,6 +63,7 @@ userRouter.post("/add-user", requireAdminSignin, async (req, res) => {
       role,
       managedBy: req.user?.managedBy?._id,
       currentSalary,
+      department,
     });
     await user.save();
     return res.status(201).json({
@@ -200,6 +208,7 @@ userRouter.put("/:id", requireAdminSignin, async (req, res) => {
     userEdit.name = body.name;
     userEdit.phoneNumber = body.phoneNumber;
     userEdit.currentSalary = body.currentSalary;
+    userEdit.department = body.department;
     await userEdit.save();
     delete userEdit.password;
     res.status(200).json({ user: userEdit });

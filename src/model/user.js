@@ -41,15 +41,15 @@ const userSchema = new mongoose.Schema({
   },
 });
 userSchema.pre("find", function () {
-  this.populate(["managedBy", "device"]);
+  this.populate(["managedBy", "device", "department"]);
 });
 
 userSchema.pre("findOne", function () {
-  this.populate(["managedBy", "device"]);
+  this.populate(["managedBy", "device", "department"]);
 });
 
 userSchema.pre("findOneAndUpdate", function () {
-  this.populate(["managedBy", "device"]);
+  this.populate(["managedBy", "device", "department"]);
 });
 
 const UserModel = mongoose.model("User", userSchema);

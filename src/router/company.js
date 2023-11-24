@@ -16,6 +16,10 @@ companyRouter.post("/department", requireAdminSignin, async (req, res) => {
     await department.save();
     return res.status(200).json({ department });
   } catch (error) {
+    console.log(
+      "🚀 ~ file: company.js:19 ~ companyRouter.post ~ error:",
+      error
+    );
     return res.status(401).json({ error: "lỗi tạo bộ phận" });
   }
 });
@@ -23,9 +27,12 @@ companyRouter.post("/department", requireAdminSignin, async (req, res) => {
 companyRouter.get("/department", requireAdminSignin, async (req, res) => {
   try {
     const user = req.user;
-    const departments = DepartmentModel.find({ company: user.managedBy._id });
+    const departments = await DepartmentModel.find({
+      company: user.managedBy._id,
+    });
     return res.status(200).json({ departments });
   } catch (error) {
+    console.log("🚀 ~ file: company.js:30 ~ companyRouter.get ~ error:", error);
     return res.status(401).json({ error: "lỗi tạo bộ phận" });
   }
 });
