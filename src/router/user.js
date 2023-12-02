@@ -181,6 +181,7 @@ userRouter.post("/create-password", requireAdminSignin, async (req, res) => {
 userRouter.get("/get-user-managed", requireAdminSignin, async (req, res) => {
   try {
     const txtSearch = req.query.txtSearch;
+    const department = req.query.department;
     const user = req.user;
     const users = await UserModel.find({
       managedBy: user.managedBy?._id,
@@ -189,6 +190,7 @@ userRouter.get("/get-user-managed", requireAdminSignin, async (req, res) => {
         { email: { $regex: txtSearch || "", $options: "i" } },
         { name: { $regex: txtSearch || "", $options: "i" } },
       ],
+      department,
     });
     res.status(200).json({ users });
   } catch {
