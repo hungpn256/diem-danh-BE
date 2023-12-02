@@ -4,8 +4,8 @@ const getTransport = () =>
   createTransport({
     service: "Gmail",
     auth: {
-      user: "phamnanghung.25@gmail.com",
-      pass: "fmrimnfwujlmqgma",
+      user: "chiennm.ptit@gmail.com",
+      pass: "vkyjuxwmppusxpte",
     },
   });
 
