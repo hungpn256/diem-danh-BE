@@ -183,15 +183,18 @@ userRouter.get("/get-user-managed", requireAdminSignin, async (req, res) => {
     const txtSearch = req.query.txtSearch;
     const department = req.query.department;
     const user = req.user;
-    const users = await UserModel.find({
+    const query = {
       managedBy: user.managedBy?._id,
       role: "user",
       $or: [
         { email: { $regex: txtSearch || "", $options: "i" } },
         { name: { $regex: txtSearch || "", $options: "i" } },
       ],
-      department,
-    });
+    };
+    if (department) {
+      query.department = department;
+    }
+    const users = await UserModel.find(query);
     res.status(200).json({ users });
   } catch {
     return res.status(401).json({
