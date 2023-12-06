@@ -235,7 +235,7 @@ attendanceRouter.put(
           to: leaveRequest.userId?.email,
           subject: type,
           text: `Đơn ${type.toLowerCase()} vào ngày ${moment(
-            leaveRequest.time
+            leaveRequest.date
           ).format("YYYY-MM-DD")} đã được xét duyệt`,
         });
       } else {
@@ -246,7 +246,7 @@ attendanceRouter.put(
           to: leaveRequest.userId?.email,
           subject: type,
           text: `Đơn ${type.toLowerCase()} vào ngày ${moment(
-            leaveRequest.time
+            leaveRequest.date
           ).format("YYYY-MM-DD")} đã bị từ chối`,
         });
         await user.save();
