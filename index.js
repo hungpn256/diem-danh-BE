@@ -53,7 +53,7 @@ mongoose
         const sendMailPromise = users.map((email) => {
           return sendEmail({
             to: email,
-            html: `Hqua Đéo chấm công à`,
+            html: `Bạn bị thiếu công hôm trước, vui lòng kiểm tra lại hoặc bổ sung công.`,
             subject: "Chấm công",
             text: "Chấm công",
           });
