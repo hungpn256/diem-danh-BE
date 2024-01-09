@@ -46,7 +46,7 @@ attendanceRouter.post("/attendance", requireSignin, async (req, res) => {
     }
     const attendanceExist = await AttendanceModel.findOne({
       userId: userId,
-      date: { $gte: moment().startOf("day") },
+      date: { $gte: moment().startOf("day"), $lte: moment().endOf("day") },
     });
     if (attendanceExist) {
       attendanceExist.checkOutTime = moment().toDate();
