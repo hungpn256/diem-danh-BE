@@ -113,9 +113,9 @@ attendanceRouter.post("/attendance", requireSignin, async (req, res) => {
           getTimeByHour((company.morningStartTime + company.morningEndTime) / 2)
         )
       ) {
-        latePenalty = moment().diff(
-          getTimeByHour(company.morningStartTime),
-          "minute"
+        latePenalty = Math.max(
+          0,
+          moment().diff(getTimeByHour(company.morningStartTime), "minute")
         );
       } else if (
         moment().isBefore(
@@ -124,9 +124,9 @@ attendanceRouter.post("/attendance", requireSignin, async (req, res) => {
           )
         )
       ) {
-        latePenalty = moment().diff(
-          getTimeByHour(company.afternoonStartTime),
-          "minute"
+        latePenalty = Math.max(
+          0,
+          moment().diff(getTimeByHour(company.afternoonStartTime), "minute")
         );
       }
 
@@ -140,10 +140,6 @@ attendanceRouter.post("/attendance", requireSignin, async (req, res) => {
       return res.status(200).json({ attendance });
     }
   } catch (error) {
-    console.log(
-      "🚀 ~ file: attendance.js:125 ~ attendanceRouter.post ~ error:",
-      error
-    );
     return res.status(401).json({ error: "Đã xay ra lỗi" });
   }
 });
@@ -433,11 +429,7 @@ attendanceRouter.get("/", requireSignin, async (req, res) => {
       date: "ascending",
     });
     return res.status(200).json({
-      attendances: attendances.filter(
-        (item) =>
-          moment(item.date).get("isoWeekday") >= 1 &&
-          moment(item.date).get("isoWeekday") <= 5
-      ),
+      attendances: attendances,
     });
   } catch (error) {
     console.log(

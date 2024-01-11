@@ -30,7 +30,9 @@ const getSalary = async (from, to, users) => {
     }, 0);
 
     const latePenalty = attendanceIsValid.reduce((prev, item) => {
-      return prev + item.latePenalty ? item.latePenalty * 10000 : 0;
+      return prev + item.latePenalty
+        ? Math.min(item.latePenalty * 2000, 100000)
+        : 0;
     }, 0);
     const salary = Math.max(
       0,
