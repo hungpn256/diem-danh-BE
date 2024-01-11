@@ -32,7 +32,7 @@ const getSalary = async (from, to, users) => {
     }, 0);
 
     const latePenalty = attendanceIsValid.reduce((prev, item) => {
-      return prev + item.latePenalty
+      return prev + item.latePenalty >= 0
         ? Math.min(item.latePenalty * 2000, 100000)
         : 0;
     }, 0);
