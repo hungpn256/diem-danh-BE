@@ -16,7 +16,9 @@ const getSalary = async (from, to, users) => {
     const attendanceIsValid = attendances.filter(
       (item) =>
         moment(item.date).get("isoWeekday") >= 1 &&
-        moment(item.date).get("isoWeekday") <= 5
+        moment(item.date).get("isoWeekday") <= 5 &&
+        item.workSession &&
+        item.workSession !== "00"
     );
 
     const workDayValid = attendanceIsValid.reduce((prev, item) => {
